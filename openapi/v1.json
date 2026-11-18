@@ -1,0 +1,1909 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API Perunio",
+    "version": "1.0.0",
+    "description": "Descarga los XML, PDF y CDR de los comprobantes de una empresa desde tus propios sistemas. Cada clave da acceso a una sola empresa y consume las descargas de su plan. v1 solo crece: se agregan campos y rutas, nunca se quitan."
+  },
+  "servers": [
+    {
+      "url": "https://api.perunio.pe/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "prn_live_<keyId>_<secret>",
+        "description": "Clave de API de una empresa, creada en Perunio → Integraciones → API."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "codigo": {
+                "type": "string",
+                "enum": [
+                  "SOLICITUD_INVALIDA",
+                  "NO_DESCARGABLE",
+                  "CLAVE_INVALIDA",
+                  "PLAN_SIN_ACCESO",
+                  "CUENTA_DESACTIVADA",
+                  "EMPRESA_SIN_CREDENCIALES",
+                  "EMPRESA_NO_DISPONIBLE",
+                  "CUOTA_AGOTADA",
+                  "SUNAT_ACCESO_DENEGADO",
+                  "NO_ENCONTRADO",
+                  "COMPROBANTE_NO_ENCONTRADO",
+                  "SIN_ARCHIVOS",
+                  "TRABAJO_ACTIVO_EXISTENTE",
+                  "TRABAJO_NO_TERMINADO",
+                  "TRABAJO_YA_TERMINADO",
+                  "CLAVE_IDEMPOTENCIA_REUSADA",
+                  "ARCHIVO_VENCIDO",
+                  "CUERPO_DEMASIADO_GRANDE",
+                  "SIRE_SIN_CREDENCIALES",
+                  "SUNAT_CREDENCIALES_RECHAZADAS",
+                  "SUNAT_RECHAZO",
+                  "SOL_DOBLE_FACTOR",
+                  "DEMASIADAS_SOLICITUDES",
+                  "ERROR_INTERNO",
+                  "INTERRUMPIDO",
+                  "SUNAT_NO_DISPONIBLE",
+                  "ALMACENAMIENTO_NO_DISPONIBLE",
+                  "CLAVES_NO_DISPONIBLES",
+                  "CUENTA_SUSPENDIDA"
+                ],
+                "description": "Código estable; decide con él, nunca con `mensaje`."
+              },
+              "mensaje": {
+                "type": "string",
+                "description": "Descripción para personas; puede cambiar."
+              },
+              "detalles": {},
+              "idSolicitud": {
+                "type": "string",
+                "example": "req_3f2a9c0e8b1d4e6fa7c5b2d1e0f9a8b7"
+              }
+            },
+            "required": [
+              "codigo",
+              "mensaje",
+              "idSolicitud"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "description": "Toda respuesta de error tiene esta forma."
+      },
+      "Comprobante": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador del registro en SIRE (CAR SUNAT)."
+          },
+          "rucEmisor": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,20}$",
+            "description": "Número de documento del emisor (RUC u otro).",
+            "example": "20100070970"
+          },
+          "codTipoCdp": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z]{2}$",
+            "description": "Tipo de comprobante, Catálogo 01 de SUNAT. Se descargan: 01 Factura, 02 Recibo por honorarios, 03 Boleta de venta, 07 Nota de crédito y 08 Nota de débito.",
+            "example": "01",
+            "x-downloadable-values": [
+              {
+                "value": "01",
+                "label": "Factura"
+              },
+              {
+                "value": "02",
+                "label": "Recibo por honorarios"
+              },
+              {
+                "value": "03",
+                "label": "Boleta de venta"
+              },
+              {
+                "value": "07",
+                "label": "Nota de crédito"
+              },
+              {
+                "value": "08",
+                "label": "Nota de débito"
+              }
+            ],
+            "externalDocs": {
+              "description": "Catálogo 01 completo",
+              "url": "https://github.com/nmitic/perunio-sunat-catalogs/blob/main/catalogs/cat01.json"
+            }
+          },
+          "serie": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{1,20}$",
+            "example": "F001"
+          },
+          "numero": {
+            "type": "string",
+            "pattern": "^[0-9]{1,20}$",
+            "example": "12345"
+          },
+          "descargable": {
+            "type": "boolean",
+            "description": "Si SUNAT entrega sus archivos (XML, PDF, CDR): pásalo tal cual a la descarga individual o masiva."
+          },
+          "fechaEmision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Fecha de emisión, AAAA-MM-DD.",
+            "example": "2026-09-03"
+          },
+          "fechaVencimiento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Fecha de vencimiento o pago, AAAA-MM-DD, si SUNAT la registra."
+          },
+          "contraparte": {
+            "type": "object",
+            "properties": {
+              "tipoDocumento": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Tipo de documento de identidad, Catálogo 06.",
+                "example": "6"
+              },
+              "numeroDocumento": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "nombre": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "tipoDocumento",
+              "numeroDocumento",
+              "nombre"
+            ],
+            "description": "En `rce`, el proveedor (el emisor). En `rvie`, el cliente."
+          },
+          "moneda": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Moneda, código ISO 4217.",
+            "example": "PEN"
+          },
+          "tipoCambio": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Tipo de cambio, si la moneda no es PEN."
+          },
+          "montos": {
+            "type": "object",
+            "properties": {
+              "baseImponible": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Base imponible gravada. En `rce`, la suma de las tres bases (DG, DGNG, DNG); en `rvie`, neta de descuentos."
+              },
+              "igv": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "IGV/IPM, sumado igual que `baseImponible`."
+              },
+              "total": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Importe total del comprobante."
+              }
+            },
+            "required": [
+              "baseImponible",
+              "igv",
+              "total"
+            ],
+            "description": "Montos en la moneda del comprobante, como los registra SIRE. `null` cuando SIRE no trae el monto."
+          },
+          "estado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Estado del comprobante en SIRE (`codEstadoComprobante`), tal como lo envía SUNAT."
+          },
+          "documentoModificado": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "codTipoCdp": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "serie": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "numero": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fechaEmision": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "codTipoCdp",
+              "serie",
+              "numero",
+              "fechaEmision"
+            ],
+            "description": "El comprobante que modifica una nota de crédito o débito; `null` en los demás."
+          },
+          "estadosDescarga": {
+            "type": "object",
+            "properties": {
+              "xml": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "descargado",
+                      "fallido"
+                    ]
+                  },
+                  "codigo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Con `fallido`, el motivo, con los mismos códigos de error de la API. `null` con `descargado`.",
+                    "example": "COMPROBANTE_NO_ENCONTRADO"
+                  },
+                  "intentadoEn": {
+                    "type": "string",
+                    "description": "Fecha del último intento, ISO 8601."
+                  }
+                },
+                "required": [
+                  "estado",
+                  "codigo",
+                  "intentadoEn"
+                ],
+                "description": "`null` si este archivo nunca se descargó ni falló."
+              },
+              "pdf": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "descargado",
+                      "fallido"
+                    ]
+                  },
+                  "codigo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Con `fallido`, el motivo, con los mismos códigos de error de la API. `null` con `descargado`.",
+                    "example": "COMPROBANTE_NO_ENCONTRADO"
+                  },
+                  "intentadoEn": {
+                    "type": "string",
+                    "description": "Fecha del último intento, ISO 8601."
+                  }
+                },
+                "required": [
+                  "estado",
+                  "codigo",
+                  "intentadoEn"
+                ],
+                "description": "`null` si este archivo nunca se descargó ni falló."
+              },
+              "cdr": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "descargado",
+                      "fallido"
+                    ]
+                  },
+                  "codigo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Con `fallido`, el motivo, con los mismos códigos de error de la API. `null` con `descargado`.",
+                    "example": "COMPROBANTE_NO_ENCONTRADO"
+                  },
+                  "intentadoEn": {
+                    "type": "string",
+                    "description": "Fecha del último intento, ISO 8601."
+                  }
+                },
+                "required": [
+                  "estado",
+                  "codigo",
+                  "intentadoEn"
+                ],
+                "description": "`null` si este archivo nunca se descargó ni falló."
+              }
+            },
+            "required": [
+              "xml",
+              "pdf",
+              "cdr"
+            ],
+            "description": "El resultado del último intento de descarga de cada archivo en Perunio, el mismo que muestra Registros en la app."
+          }
+        },
+        "required": [
+          "id",
+          "rucEmisor",
+          "codTipoCdp",
+          "serie",
+          "numero",
+          "descargable",
+          "fechaEmision",
+          "fechaVencimiento",
+          "contraparte",
+          "moneda",
+          "tipoCambio",
+          "montos",
+          "estado",
+          "documentoModificado",
+          "estadosDescarga"
+        ]
+      },
+      "ListaComprobantes": {
+        "type": "object",
+        "properties": {
+          "registro": {
+            "type": "string",
+            "enum": [
+              "rce",
+              "rvie"
+            ],
+            "description": "`rce`: Registro de Compras · `rvie`: Registro de Ventas.",
+            "example": "rce"
+          },
+          "periodo": {
+            "type": "string",
+            "pattern": "^\\d{4}(0[1-9]|1[0-2])$",
+            "description": "Periodo SIRE, AAAAMM.",
+            "example": "202609"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Cantidad de comprobantes en `datos`."
+          },
+          "datos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comprobante"
+            }
+          }
+        },
+        "required": [
+          "registro",
+          "periodo",
+          "total",
+          "datos"
+        ]
+      },
+      "ComprobanteADescargar": {
+        "type": "object",
+        "properties": {
+          "rucEmisor": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,20}$",
+            "description": "Número de documento del emisor (RUC u otro).",
+            "example": "20100070970"
+          },
+          "codTipoCdp": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z]{2}$",
+            "description": "Tipo de comprobante, Catálogo 01 de SUNAT. Se descargan: 01 Factura, 02 Recibo por honorarios, 03 Boleta de venta, 07 Nota de crédito y 08 Nota de débito.",
+            "example": "01",
+            "x-downloadable-values": [
+              {
+                "value": "01",
+                "label": "Factura"
+              },
+              {
+                "value": "02",
+                "label": "Recibo por honorarios"
+              },
+              {
+                "value": "03",
+                "label": "Boleta de venta"
+              },
+              {
+                "value": "07",
+                "label": "Nota de crédito"
+              },
+              {
+                "value": "08",
+                "label": "Nota de débito"
+              }
+            ],
+            "externalDocs": {
+              "description": "Catálogo 01 completo",
+              "url": "https://github.com/nmitic/perunio-sunat-catalogs/blob/main/catalogs/cat01.json"
+            }
+          },
+          "serie": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{1,20}$",
+            "example": "F001"
+          },
+          "numero": {
+            "type": "string",
+            "pattern": "^[0-9]{1,20}$",
+            "example": "12345"
+          }
+        },
+        "required": [
+          "rucEmisor",
+          "codTipoCdp",
+          "serie",
+          "numero"
+        ]
+      },
+      "ComprobanteOmitido": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComprobanteADescargar"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "motivo": {
+                "type": "string",
+                "enum": [
+                  "NO_DESCARGABLE",
+                  "REPETIDO"
+                ]
+              }
+            },
+            "required": [
+              "motivo"
+            ]
+          }
+        ]
+      },
+      "DescargaMasiva": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "en_cola",
+              "listando",
+              "procesando",
+              "completado",
+              "fallido",
+              "cancelado"
+            ],
+            "description": "`en_cola` → (`listando`, solo por periodo) → `procesando` → `completado` | `fallido` | `cancelado`."
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "comprobantes",
+              "periodo"
+            ],
+            "description": "`comprobantes` si se enviaron `comprobantes`; `periodo` si se descarga el periodo completo."
+          },
+          "registro": {
+            "type": "string",
+            "enum": [
+              "rce",
+              "rvie"
+            ],
+            "description": "`rce`: Registro de Compras · `rvie`: Registro de Ventas.",
+            "example": "rce"
+          },
+          "periodo": {
+            "type": "string",
+            "pattern": "^\\d{4}(0[1-9]|1[0-2])$",
+            "description": "Periodo SIRE, AAAAMM.",
+            "example": "202609"
+          },
+          "tiposArchivo": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "xml",
+                "pdf",
+                "cdr"
+              ],
+              "description": "Archivo del comprobante.",
+              "example": "xml"
+            }
+          },
+          "reintentosMaximos": {
+            "type": "integer"
+          },
+          "totalComprobantes": {
+            "type": "integer",
+            "description": "Comprobantes del trabajo. 0 mientras se lista el periodo."
+          },
+          "comprobantesProcesados": {
+            "type": "integer"
+          },
+          "archivosDescargados": {
+            "type": "integer",
+            "description": "Archivos descargados (cada uno consumió 1 descarga del plan)."
+          },
+          "archivosFallidos": {
+            "type": "integer"
+          },
+          "archivoDisponible": {
+            "type": "boolean",
+            "description": "Si `/archivo` entrega el ZIP ahora."
+          },
+          "tamanoArchivoBytes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "expiraEn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Cuándo se borra el ZIP: 7 días después de que el trabajo termina, en todos los planes. `null` mientras el trabajo no termina."
+          },
+          "error": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "codigo": {
+                "type": "string"
+              },
+              "mensaje": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "codigo",
+              "mensaje"
+            ],
+            "description": "Por qué falló el trabajo, si `estado` es `fallido`."
+          },
+          "creadoEn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "iniciadoEn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "terminadoEn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "enlaces": {
+            "type": "object",
+            "properties": {
+              "propio": {
+                "type": "string"
+              },
+              "comprobantes": {
+                "type": "string"
+              },
+              "archivo": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "propio",
+              "comprobantes",
+              "archivo"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "modo",
+          "registro",
+          "periodo",
+          "tiposArchivo",
+          "reintentosMaximos",
+          "totalComprobantes",
+          "comprobantesProcesados",
+          "archivosDescargados",
+          "archivosFallidos",
+          "archivoDisponible",
+          "tamanoArchivoBytes",
+          "expiraEn",
+          "error",
+          "creadoEn",
+          "iniciadoEn",
+          "terminadoEn",
+          "enlaces"
+        ]
+      },
+      "DescargaMasivaCreada": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DescargaMasiva"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "comprobantesOmitidos": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ComprobanteOmitido"
+                },
+                "description": "Comprobantes descartados al crear: tipo no descargable o repetido."
+              }
+            },
+            "required": [
+              "comprobantesOmitidos"
+            ]
+          }
+        ]
+      },
+      "CrearDescargaMasiva": {
+        "type": "object",
+        "properties": {
+          "registro": {
+            "type": "string",
+            "enum": [
+              "rce",
+              "rvie"
+            ],
+            "description": "`rce`: Registro de Compras · `rvie`: Registro de Ventas.",
+            "example": "rce"
+          },
+          "periodo": {
+            "type": "string",
+            "pattern": "^\\d{4}(0[1-9]|1[0-2])$",
+            "description": "Periodo SIRE, AAAAMM.",
+            "example": "202609"
+          },
+          "tiposArchivo": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "xml",
+                "pdf",
+                "cdr"
+              ],
+              "description": "Archivo del comprobante.",
+              "example": "xml"
+            },
+            "minItems": 1,
+            "maxItems": 3,
+            "example": [
+              "xml",
+              "pdf"
+            ]
+          },
+          "comprobantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComprobanteADescargar"
+            },
+            "minItems": 1,
+            "maxItems": 10000,
+            "description": "Los comprobantes a descargar (1 a 10000). Si se omite, se descarga el periodo completo según SIRE.",
+            "x-when-omitted": "Perunio lista el periodo completo en SIRE y descarga todos sus comprobantes descargables.",
+            "example": [
+              {
+                "rucEmisor": "20100070970",
+                "codTipoCdp": "01",
+                "serie": "F001",
+                "numero": "12345"
+              },
+              {
+                "rucEmisor": "20100070970",
+                "codTipoCdp": "07",
+                "serie": "FC01",
+                "numero": "321"
+              },
+              {
+                "rucEmisor": "20512345678",
+                "codTipoCdp": "03",
+                "serie": "B001",
+                "numero": "4567"
+              }
+            ]
+          },
+          "reintentosMaximos": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8,
+            "default": 3,
+            "description": "Reintentos por archivo ante fallas pasajeras de SUNAT (0 a 8), con espera creciente desde 1 s. Las fallas definitivas (no existe, datos inválidos) no se reintentan."
+          }
+        },
+        "required": [
+          "registro",
+          "periodo",
+          "tiposArchivo"
+        ],
+        "additionalProperties": false
+      },
+      "ListaDescargasMasivas": {
+        "type": "object",
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DescargaMasiva"
+            }
+          },
+          "siguienteCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "datos",
+          "siguienteCursor"
+        ]
+      },
+      "ComprobanteDeDescarga": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComprobanteADescargar"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "estado": {
+                "type": "string",
+                "enum": [
+                  "pendiente",
+                  "procesando",
+                  "completado",
+                  "fallido"
+                ],
+                "description": "`completado` si se descargó al menos un archivo."
+              },
+              "archivosFallidos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "tipoArchivo": {
+                      "type": "string",
+                      "enum": [
+                        "xml",
+                        "pdf",
+                        "cdr"
+                      ],
+                      "description": "Archivo del comprobante.",
+                      "example": "xml"
+                    },
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "tipoArchivo",
+                    "codigo",
+                    "mensaje"
+                  ]
+                },
+                "description": "Archivos de este comprobante que fallaron. Se completa al terminar el trabajo."
+              }
+            },
+            "required": [
+              "estado",
+              "archivosFallidos"
+            ]
+          }
+        ]
+      },
+      "ListaComprobantesDeDescarga": {
+        "type": "object",
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComprobanteDeDescarga"
+            }
+          },
+          "siguienteCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "datos",
+          "siguienteCursor"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/openapi.json": {
+      "get": {
+        "summary": "Esta especificación",
+        "description": "La especificación OpenAPI 3.1 de la API. No requiere clave.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Especificación OpenAPI.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comprobantes": {
+      "get": {
+        "summary": "Listar los comprobantes de un periodo",
+        "description": "Los comprobantes de un periodo del Registro de Compras o de Ventas, consultados en SIRE en el momento. No consume descargas del plan. Cada comprobante trae los datos para pedir sus archivos con la descarga individual o masiva; `descargable` dice si SUNAT los entrega. El periodo llega completo, sin paginar; un periodo grande puede tardar varios segundos. Requiere las credenciales de API SIRE de la empresa. 60 consultas por hora por clave.\n\nCada comprobante trae `estadosDescarga`, el último intento de descarga de cada archivo. Para reintentar lo que falló, consulta con `estadoDescarga=fallido`, pasa el resultado como `comprobantes` a la descarga masiva y repite hasta que no quede nada o solo queden fallos que no cambian (como `COMPROBANTE_NO_ENCONTRADO`).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rce",
+                "rvie"
+              ],
+              "description": "`rce`: Registro de Compras · `rvie`: Registro de Ventas.",
+              "example": "rce"
+            },
+            "required": true,
+            "name": "registro",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}(0[1-9]|1[0-2])$",
+              "description": "Periodo SIRE, AAAAMM.",
+              "example": "202609"
+            },
+            "required": true,
+            "name": "periodo",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fallido"
+              ],
+              "description": "Con `fallido`, devuelve solo los comprobantes con algún archivo que SUNAT no entregó en su último intento (desde la API, la app o una descarga programada). Pásalos como `comprobantes` a la descarga masiva; repite la consulta para ver lo que sigue fallando.",
+              "example": "fallido"
+            },
+            "required": false,
+            "name": "estadoDescarga",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Los comprobantes del periodo. Un periodo sin propuesta en SIRE devuelve `datos` vacío.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaComprobantes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos (`SOLICITUD_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "La empresa no tiene credenciales SIRE (`SIRE_SIN_CREDENCIALES`), o SUNAT las rechazó (`SUNAT_CREDENCIALES_RECHAZADAS`) o rechazó la solicitud (`SUNAT_RECHAZO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "SUNAT no responde (`SUNAT_NO_DISPONIBLE`). Reintenta más tarde.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comprobantes/{registro}/{rucEmisor}/{codTipoCdp}/{serie}/{numero}/{tipoArchivo}": {
+      "get": {
+        "summary": "Descargar un archivo",
+        "description": "Devuelve el XML, PDF o CDR de un comprobante tal como lo entrega SUNAT. Consume 1 descarga del plan, solo si la descarga tiene éxito. Para más de unos pocos archivos usa la descarga masiva.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rce",
+                "rvie"
+              ],
+              "description": "`rce`: Registro de Compras · `rvie`: Registro de Ventas.",
+              "example": "rce"
+            },
+            "required": true,
+            "name": "registro",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]{1,20}$",
+              "description": "Número de documento del emisor (RUC u otro).",
+              "example": "20100070970"
+            },
+            "required": true,
+            "name": "rucEmisor",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Za-z]{2}$",
+              "description": "Tipo de comprobante, Catálogo 01 de SUNAT. Se descargan: 01 Factura, 02 Recibo por honorarios, 03 Boleta de venta, 07 Nota de crédito y 08 Nota de débito.",
+              "example": "01",
+              "x-downloadable-values": [
+                {
+                  "value": "01",
+                  "label": "Factura"
+                },
+                {
+                  "value": "02",
+                  "label": "Recibo por honorarios"
+                },
+                {
+                  "value": "03",
+                  "label": "Boleta de venta"
+                },
+                {
+                  "value": "07",
+                  "label": "Nota de crédito"
+                },
+                {
+                  "value": "08",
+                  "label": "Nota de débito"
+                }
+              ],
+              "externalDocs": {
+                "description": "Catálogo 01 completo",
+                "url": "https://github.com/nmitic/perunio-sunat-catalogs/blob/main/catalogs/cat01.json"
+              }
+            },
+            "required": true,
+            "name": "codTipoCdp",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]{1,20}$",
+              "example": "F001"
+            },
+            "required": true,
+            "name": "serie",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,20}$",
+              "example": "12345"
+            },
+            "required": true,
+            "name": "numero",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "xml",
+                "pdf",
+                "cdr"
+              ],
+              "description": "Archivo del comprobante.",
+              "example": "xml"
+            },
+            "required": true,
+            "name": "tipoArchivo",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 3,
+              "default": 0,
+              "description": "Reintentos ante una falla pasajera de SUNAT (0 a 3), con espera de 1 s, 2 s y 4 s."
+            },
+            "required": false,
+            "name": "reintentos",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El archivo. `Content-Disposition` trae su nombre.",
+            "headers": {
+              "X-Perunio-Descargas-Restantes": {
+                "description": "Descargas que quedan en el periodo del plan. Ausente si el plan es ilimitado.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos (`SOLICITUD_INVALIDA`) o tipo que SUNAT no entrega (`NO_DESCARGABLE`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SUNAT no tiene el archivo (`COMPROBANTE_NO_ENCONTRADO`). Un comprobante emitido en SEE-SOL (serie E…) no tiene CDR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SUNAT rechazó las credenciales (`SUNAT_CREDENCIALES_RECHAZADAS`), pide doble factor (`SOL_DOBLE_FACTOR`) o rechazó la solicitud (`SUNAT_RECHAZO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "SUNAT no responde (`SUNAT_NO_DISPONIBLE`). Reintenta más tarde.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/descargas-masivas": {
+      "post": {
+        "summary": "Crear una descarga masiva",
+        "description": "Empieza un trabajo que descarga los archivos pedidos a un ZIP. Con `comprobantes`, descarga esos; sin `comprobantes`, lista el periodo completo en SIRE y descarga todo. Consulta el trabajo hasta que termine y luego pide `/archivo`. Cada archivo descargado consume 1 descarga del plan. Una empresa tiene como máximo un trabajo activo a la vez; 20 creaciones por hora por clave.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\x21-\\x7e]{1,100}$",
+              "description": "Opcional. Reenviar la misma clave con el mismo cuerpo devuelve el trabajo original.",
+              "example": "rce-202609-run-1"
+            },
+            "required": false,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearDescargaMasiva"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Misma `Idempotency-Key` y mismo cuerpo que un trabajo anterior: ese trabajo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescargaMasivaCreada"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Trabajo creado. `Location` apunta a él.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescargaMasivaCreada"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cuerpo inválido (`SOLICITUD_INVALIDA`) o ningún comprobante descargable (`NO_DESCARGABLE`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay un trabajo activo (`TRABAJO_ACTIVO_EXISTENTE`, `detalles.idTrabajo`) o la `Idempotency-Key` se usó con otro cuerpo (`CLAVE_IDEMPOTENCIA_REUSADA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Cuerpo de más de 2 MB (`CUERPO_DEMASIADO_GRANDE`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Descarga por periodo sin credenciales SIRE (`SIRE_SIN_CREDENCIALES`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Almacenamiento no disponible (`ALMACENAMIENTO_NO_DISPONIBLE`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar descargas masivas",
+        "description": "Los trabajos creados por API para la empresa de la clave, del más reciente al más antiguo.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en_cola",
+                "listando",
+                "procesando",
+                "completado",
+                "fallido",
+                "cancelado"
+              ],
+              "description": "`en_cola` → (`listando`, solo por periodo) → `procesando` → `completado` | `fallido` | `cancelado`."
+            },
+            "required": false,
+            "name": "estado",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "limite",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "El `siguienteCursor` de la página anterior."
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Una página de trabajos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaDescargasMasivas"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/descargas-masivas/{id}": {
+      "get": {
+        "summary": "Consultar una descarga masiva",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El trabajo.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos sugeridos antes de volver a consultar, mientras el trabajo sigue activo.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescargaMasiva"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe un trabajo con ese id para esta clave (`NO_ENCONTRADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancelar una descarga masiva",
+        "description": "Un trabajo cancelado no consume descargas del plan y no deja ZIP.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El trabajo, ahora `cancelado`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescargaMasiva"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe un trabajo con ese id para esta clave (`NO_ENCONTRADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El trabajo ya terminó (`TRABAJO_YA_TERMINADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/descargas-masivas/{id}/comprobantes": {
+      "get": {
+        "summary": "Resultado por comprobante",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "procesando",
+                "completado",
+                "fallido"
+              ]
+            },
+            "required": false,
+            "name": "estado",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 500
+            },
+            "required": false,
+            "name": "limite",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "El `siguienteCursor` de la página anterior."
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Una página de comprobantes, en el orden enviado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaComprobantesDeDescarga"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe un trabajo con ese id para esta clave (`NO_ENCONTRADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/descargas-masivas/{id}/archivo": {
+      "get": {
+        "summary": "Descargar el ZIP",
+        "description": "Redirige (302) a un enlace temporal de 15 minutos. Pide uno nuevo cada vez; no lo guardes. Los nombres de las carpetas y archivos dentro del ZIP siguen Configuración → Descargas de quien creó la clave (por defecto `RUC-TIPO-SERIE-NÚMERO/` con el nombre de SUNAT): lee las rutas del ZIP, no las construyas.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirección al ZIP.",
+            "headers": {
+              "Location": {
+                "description": "Enlace temporal al ZIP.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave, no es válida o fue revocada (`CLAVE_INVALIDA`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El plan no incluye la API (`PLAN_SIN_ACCESO`), la empresa no puede usarse (`EMPRESA_SIN_CREDENCIALES`, `EMPRESA_NO_DISPONIBLE`, `CUENTA_DESACTIVADA`, `CUENTA_SUSPENDIDA`), se agotaron las descargas del plan (`CUOTA_AGOTADA`) o el usuario SOL no tiene acceso (`SUNAT_ACCESO_DENEGADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el trabajo (`NO_ENCONTRADO`), o terminó sin archivos (`SIN_ARCHIVOS`). Un trabajo vencido desaparece al pasar la limpieza horaria.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El trabajo no terminó (`TRABAJO_NO_TERMINADO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "El ZIP venció: se guarda 7 días después de que el trabajo termina (`ARCHIVO_VENCIDO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes de la clave (`DEMASIADAS_SOLICITUDES`). Ver `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado (`ERROR_INTERNO`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

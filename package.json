@@ -1,0 +1,80 @@
+{
+  "name": "@perunio/sdk",
+  "version": "0.1.0",
+  "description": "Cliente TypeScript de la API Perunio: descarga XML, PDF y CDR de comprobantes SUNAT desde Node.js, Bun, Deno o el edge.",
+  "license": "MIT",
+  "author": "Perunio",
+  "homepage": "https://perunio.pe/desarrolladores",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nmitic/perunio-api-sdk.git"
+  },
+  "keywords": [
+    "sunat",
+    "peru",
+    "comprobantes",
+    "factura electronica",
+    "xml",
+    "cdr",
+    "sire",
+    "perunio"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/indice.cjs",
+  "module": "./dist/indice.js",
+  "types": "./dist/indice.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/indice.d.ts",
+        "default": "./dist/indice.js"
+      },
+      "require": {
+        "types": "./dist/indice.d.cts",
+        "default": "./dist/indice.cjs"
+      }
+    },
+    "./node": {
+      "import": {
+        "types": "./dist/nodo.d.ts",
+        "default": "./dist/nodo.js"
+      },
+      "require": {
+        "types": "./dist/nodo.d.cts",
+        "default": "./dist/nodo.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "compilar": "tsup",
+    "probar": "vitest run",
+    "tipos": "tsc --noEmit",
+    "revisar": "eslint .",
+    "verificar": "npm run tipos && npm run revisar && npm run probar && npm run compilar",
+    "sincronizar:openapi": "node scripts/sincronizar-openapi.mjs",
+    "comprobar:openapi": "node scripts/sincronizar-openapi.mjs --comprobar",
+    "test": "vitest run",
+    "build": "tsup",
+    "prepublishOnly": "npm run verificar"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "eslint": "^10.15.0",
+    "openapi-typescript": "^7.13.0",
+    "tsup": "^9.0.0",
+    "typescript": "~5.9",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1"
+  }
+}

@@ -1,0 +1,26 @@
+name: Publicar
+
+# Una etiqueta v* (npm version + git push --follow-tags) publica en npm con
+# Trusted Publishing: sin token guardado, con procedencia firmada. Ver PUBLICAR.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted Publishing necesita npm 11.5 o superior.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run verificar
+      - run: npm publish --access public --provenance
