@@ -1,5 +1,5 @@
 {
-  "name": "@perunio/sdk",
+  "name": "@perunio.dev/sdk",
   "version": "0.1.0",
   "description": "Cliente TypeScript de la API Perunio: descarga XML, PDF y CDR de comprobantes SUNAT desde Node.js, Bun, Deno o el edge.",
   "license": "MIT",

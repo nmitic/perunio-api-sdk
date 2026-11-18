@@ -1,10 +1,10 @@
 # Publicar una versión
 
-Para quien mantiene el SDK. El paquete es `@perunio/sdk` en npm.
+Para quien mantiene el SDK. El paquete es `@perunio.dev/sdk` en npm.
 
 ## Una sola vez
 
-1. **Organización en npm.** En npmjs.com, crea la organización `perunio` (gratis para paquetes públicos) y activa la verificación en dos pasos en tu cuenta.
+1. **Organización en npm.** En npmjs.com, crea la organización `perunio.dev` (gratis para paquetes públicos) y activa la verificación en dos pasos en tu cuenta.
 2. **Repositorio en GitHub.** Crea `nmitic/perunio-api-sdk` (vacío) y súbelo:
    ```bash
    git remote add origin git@github.com:nmitic/perunio-api-sdk.git
@@ -15,7 +15,7 @@ Para quien mantiene el SDK. El paquete es `@perunio/sdk` en npm.
    npm login
    npm publish --access public   # corre `npm run verificar` antes
    ```
-4. **Publicación de confianza (Trusted Publishing).** En npmjs.com → `@perunio/sdk` → Settings → Trusted Publisher → GitHub Actions: repositorio `nmitic/perunio-api-sdk`, workflow `publicar.yml`. Desde ahí GitHub publica sin guardar ningún token, y cada versión lleva la procedencia (provenance) firmada.
+4. **Publicación de confianza (Trusted Publishing).** En npmjs.com → `@perunio.dev/sdk` → Settings → Trusted Publisher → GitHub Actions: repositorio `nmitic/perunio-api-sdk`, workflow `publicar.yml`. Desde ahí GitHub publica sin guardar ningún token, y cada versión lleva la procedencia (provenance) firmada.
 
 ## Cada versión
 

@@ -106,7 +106,7 @@ export class TrabajoDescargaMasiva {
         return datos;
     }
 
-    /** El ZIP completo en memoria. Para archivos grandes en Node, usa `guardarZip` de `@perunio/sdk/node`. */
+    /** El ZIP completo en memoria. Para archivos grandes en Node, usa `guardarZip` de `@perunio.dev/sdk/node`. */
     async descargarZip(opciones: OpcionesLlamada = {}): Promise<ArrayBuffer> {
         return (await this.respuestaZip(opciones)).arrayBuffer();
     }

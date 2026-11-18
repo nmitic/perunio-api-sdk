@@ -1,4 +1,4 @@
-# @perunio/sdk
+# @perunio.dev/sdk
 
 Cliente TypeScript de la [API Perunio](https://perunio.pe/desarrolladores): descarga el XML, PDF y CDR de los comprobantes SUNAT de una empresa, de compras (`rce`) y de ventas (`rvie`).
 
@@ -7,7 +7,7 @@ Cliente TypeScript de la [API Perunio](https://perunio.pe/desarrolladores): desc
 - Para usar desde tu servidor: la clave da acceso a todos los comprobantes de la empresa, y el SDK no se crea dentro de un navegador.
 
 ```bash
-npm install @perunio/sdk
+npm install @perunio.dev/sdk
 ```
 
 ## Crear el cliente
@@ -15,7 +15,7 @@ npm install @perunio/sdk
 La clave es de una empresa: créala en Perunio → **Integraciones → API**. Guárdala como secreto, nunca en el código.
 
 ```ts
-import { ClientePerunio } from '@perunio/sdk';
+import { ClientePerunio } from '@perunio.dev/sdk';
 
 const perunio = new ClientePerunio(process.env.PERUNIO_API_KEY!);
 ```
@@ -25,7 +25,7 @@ const perunio = new ClientePerunio(process.env.PERUNIO_API_KEY!);
 Todo un periodo en un ZIP: XML, PDF y CDR de cada comprobante.
 
 ```ts
-import { guardarZip } from '@perunio/sdk/node';
+import { guardarZip } from '@perunio.dev/sdk/node';
 
 const trabajo = await perunio.descargaMasiva({ registro: 'rce', periodo: '202610' });
 await trabajo.terminado();
@@ -92,7 +92,7 @@ const comprobantes = await perunio.obtenerComprobantes({ registro: 'rvie', perio
 ## Un archivo
 
 ```ts
-import { guardarArchivo } from '@perunio/sdk/node';
+import { guardarArchivo } from '@perunio.dev/sdk/node';
 
 const archivo = await perunio.descargarArchivo({
   registro: 'rce', rucEmisor: '20100070970', codTipoCdp: '01', serie: 'F001', numero: '123', tipoArchivo: 'xml',
@@ -105,7 +105,7 @@ await guardarArchivo(archivo); // con el nombre que dio SUNAT
 Todo error es un `ErrorPerunio`. Decide con `codigo`, que no cambia; `message` es para personas.
 
 ```ts
-import { ErrorPerunio } from '@perunio/sdk';
+import { ErrorPerunio } from '@perunio.dev/sdk';
 
 try {
   await perunio.descargaMasiva({ registro: 'rce', periodo: '202610' });

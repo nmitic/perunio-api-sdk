@@ -1,5 +1,5 @@
 /**
- * `@perunio/sdk/node`: guardar en disco, solo para Node.js. Aparte del SDK principal,
+ * `@perunio.dev/sdk/node`: guardar en disco, solo para Node.js. Aparte del SDK principal,
  * que no usa nada de Node y corre también en Bun, Deno y el edge.
  */
 
