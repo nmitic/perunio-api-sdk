@@ -28,10 +28,7 @@ export const URL_BASE = 'https://api.perunio.pe/v1';
 export interface OpcionesCliente {
     /** La clave de la empresa (`prn_live_…`), creada en Perunio → Integraciones → API. */
     claveApi?: string;
-    /**
-     * Otra dirección para la API. Úsala para pasar por tu propio backend, que agrega la
-     * clave: así el SDK puede correr en un navegador sin que la clave llegue a él.
-     */
+    /** Otra dirección para la API, por ejemplo un entorno de pruebas. */
     urlBase?: string;
     /** Un `fetch` propio (proxy, pruebas). Por defecto, el global. */
     fetch?: typeof fetch;
@@ -52,17 +49,14 @@ export class ClientePerunio {
      */
     constructor(claveApiUOpciones: string | OpcionesCliente) {
         const opciones = typeof claveApiUOpciones === 'string' ? { claveApi: claveApiUOpciones } : claveApiUOpciones;
-        const urlBase = opciones.urlBase ?? URL_BASE;
-
-        if (opciones.claveApi && enNavegador()) {
+        if (!opciones.claveApi) {
+            throw new ErrorPerunio('SIN_CLAVE', 'Falta la clave de API (`prn_live_…`), creada en Perunio → Integraciones → API.');
+        }
+        if (enNavegador()) {
             throw new ErrorPerunio(
                 'CLAVE_EN_NAVEGADOR',
-                'No uses la clave de API en un navegador: cualquiera podría leerla y descargar los comprobantes de la empresa. ' +
-                    'Llama a la API desde tu servidor, o pasa `urlBase` con tu propio backend, que agregue la clave.',
+                'No uses la clave de API en un navegador: cualquiera podría leerla y descargar los comprobantes de la empresa. Llama a la API desde tu servidor.',
             );
-        }
-        if (!opciones.claveApi && urlBase === URL_BASE) {
-            throw new ErrorPerunio('SIN_CLAVE', 'Falta la clave de API (`prn_live_…`), creada en Perunio → Integraciones → API.');
         }
         const fetchPropio = opciones.fetch ?? globalThis.fetch;
         if (typeof fetchPropio !== 'function') {
@@ -70,7 +64,7 @@ export class ClientePerunio {
         }
 
         this.transporte = new Transporte({
-            urlBase,
+            urlBase: opciones.urlBase ?? URL_BASE,
             claveApi: opciones.claveApi,
             // Se envuelve para que un `fetch` de navegador no pierda su `this`.
             fetch: (entrada, init) => fetchPropio(entrada, init),

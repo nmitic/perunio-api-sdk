@@ -2,15 +2,15 @@ import type { CodigoErrorApi, DescargaMasiva } from './tipos';
 
 /**
  * Códigos que produce el propio SDK, sin respuesta de la API:
- * - `CLAVE_EN_NAVEGADOR`: se creó el cliente con una clave `prn_live_` dentro de un navegador.
- * - `SIN_CLAVE`: no hay clave ni una `urlBase` propia (un backend que la agregue).
+ * - `SIN_CLAVE`: se creó el cliente sin clave de API.
+ * - `CLAVE_EN_NAVEGADOR`: se creó el cliente dentro de un navegador, donde la clave quedaría expuesta.
  * - `ERROR_DE_RED`: no hubo respuesta, después de los reintentos.
  * - `RESPUESTA_INESPERADA`: la respuesta no tiene la forma de la API (por ejemplo, un proxy).
  * - `TRABAJO_CANCELADO`: se esperaba que la descarga masiva terminara, y se canceló.
  */
 export type CodigoErrorSdk =
-    | 'CLAVE_EN_NAVEGADOR'
     | 'SIN_CLAVE'
+    | 'CLAVE_EN_NAVEGADOR'
     | 'ERROR_DE_RED'
     | 'RESPUESTA_INESPERADA'
     | 'TRABAJO_CANCELADO';

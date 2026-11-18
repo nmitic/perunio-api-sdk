@@ -2,10 +2,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ClientePerunio, ErrorPerunio } from '../src/indice';
 import { apiFalsa, errorApi, json } from './api-falsa';
 
-const comoNavegador = () => {
-    Object.assign(globalThis, { window: {}, document: {} });
-};
-
 afterEach(() => {
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;
@@ -24,28 +20,28 @@ describe('ClientePerunio', () => {
         expect(new ClientePerunio('prn_live_x')).toBeInstanceOf(ClientePerunio);
     });
 
-    it('pide una clave si no hay un backend propio', () => {
+    it('pide una clave', () => {
+        expect(() => new ClientePerunio({})).toThrow(ErrorPerunio);
         expect(() => new ClientePerunio({})).toThrow(expect.objectContaining({ codigo: 'SIN_CLAVE' }));
     });
 
     it('se niega a llevar la clave a un navegador', () => {
-        comoNavegador();
-        expect(() => new ClientePerunio('prn_live_x')).toThrow(ErrorPerunio);
+        Object.assign(globalThis, { window: {}, document: {} });
         expect(() => new ClientePerunio('prn_live_x')).toThrow(expect.objectContaining({ codigo: 'CLAVE_EN_NAVEGADOR' }));
     });
 
-    it('en un navegador funciona a través de un backend propio, sin clave', async () => {
-        comoNavegador();
+    it('usa otra urlBase si se le da, con la clave', async () => {
         const llamadas: string[] = [];
         const cliente = new ClientePerunio({
-            urlBase: 'https://mi-erp.pe/perunio/',
+            claveApi: 'prn_live_x',
+            urlBase: 'http://localhost:8080/v1/',
             fetch: async (entrada, init) => {
                 llamadas.push(`${String(entrada)} ${new Headers(init?.headers).get('authorization')}`);
                 return json({ registro: 'rce', periodo: '202610', total: 0, datos: [] });
             },
         });
         await cliente.obtenerComprobantes({ registro: 'rce', periodo: '202610' });
-        expect(llamadas).toEqual(['https://mi-erp.pe/perunio/comprobantes?registro=rce&periodo=202610 null']);
+        expect(llamadas).toEqual(['http://localhost:8080/v1/comprobantes?registro=rce&periodo=202610 Bearer prn_live_x']);
     });
 });
 

@@ -4,7 +4,7 @@ Cliente TypeScript de la [API Perunio](https://perunio.pe/desarrolladores): desc
 
 - Sin dependencias. Corre en Node.js 20+, Bun, Deno y el edge (Cloudflare Workers, Vercel).
 - Tipos generados desde la especificación OpenAPI de la API.
-- Funciona en el servidor. En el navegador, solo a través de tu propio backend ([ver abajo](#en-el-navegador)).
+- Para usar desde tu servidor: la clave da acceso a todos los comprobantes de la empresa, y el SDK no se crea dentro de un navegador.
 
 ```bash
 npm install @perunio/sdk
@@ -116,22 +116,14 @@ try {
 }
 ```
 
-Los códigos de la API están en la [documentación](https://perunio.pe/desarrolladores#api). El SDK agrega `CLAVE_EN_NAVEGADOR`, `SIN_CLAVE`, `ERROR_DE_RED`, `RESPUESTA_INESPERADA` y `TRABAJO_CANCELADO`. Las fallas pasajeras (red, 429, 502, 503, 504) se reintentan solas; crear una descarga masiva lleva una `Idempotency-Key`, así que un reintento nunca la duplica.
-
-## En el navegador
-
-La clave da acceso a todos los comprobantes de la empresa, así que nunca debe llegar a un navegador: el SDK se niega a crearse con una clave `prn_live_` ahí. Pon un endpoint en tu backend que agregue la clave y reenvíe a `https://api.perunio.pe/v1`, y apunta el SDK a él:
-
-```ts
-const perunio = new ClientePerunio({ urlBase: 'https://tu-app.pe/api/perunio' });
-```
+Los códigos de la API están en la [documentación](https://perunio.pe/desarrolladores#api). El SDK agrega `SIN_CLAVE`, `CLAVE_EN_NAVEGADOR`, `ERROR_DE_RED`, `RESPUESTA_INESPERADA` y `TRABAJO_CANCELADO`. Las fallas pasajeras (red, 429, 502, 503, 504) se reintentan solas; crear una descarga masiva lleva una `Idempotency-Key`, así que un reintento nunca la duplica.
 
 ## Opciones
 
 | Opción | Por defecto | |
 |---|---|---|
 | `claveApi` | | La clave de la empresa |
-| `urlBase` | `https://api.perunio.pe/v1` | Otra dirección, por ejemplo tu backend |
+| `urlBase` | `https://api.perunio.pe/v1` | Otra dirección, por ejemplo un entorno de pruebas |
 | `fetch` | el global | Un `fetch` propio |
 | `reintentos` | `3` | Ante fallas pasajeras |
 | `intervaloConsultaMs` | `5000` | Cada cuánto consultar un trabajo en curso |

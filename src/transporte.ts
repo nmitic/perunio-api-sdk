@@ -7,7 +7,7 @@ import { ErrorPerunio } from './errores';
 
 export interface OpcionesTransporte {
     urlBase: string;
-    claveApi: string | undefined;
+    claveApi: string;
     fetch: typeof fetch;
     /** Reintentos ante una falla pasajera (red, 429, 502, 503, 504). */
     reintentos: number;
@@ -126,7 +126,7 @@ export class Transporte {
     private encabezados(solicitud: Solicitud): Record<string, string> {
         return {
             Accept: 'application/json',
-            ...(this.opciones.claveApi ? { Authorization: `Bearer ${this.opciones.claveApi}` } : {}),
+            Authorization: `Bearer ${this.opciones.claveApi}`,
             ...(solicitud.cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
             ...solicitud.encabezados,
         };
