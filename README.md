@@ -10,6 +10,8 @@ Cliente TypeScript de la [API Perunio](https://perunio.pe/desarrolladores): desc
 npm install @perunio.dev/sdk
 ```
 
+[`@perunio.dev/sdk` en npm](https://www.npmjs.com/package/@perunio.dev/sdk)
+
 ## Crear el cliente
 
 La clave es de una empresa: créala en Perunio → **Integraciones → API**. Guárdala como secreto, nunca en el código.
